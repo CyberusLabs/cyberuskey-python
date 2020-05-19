@@ -1,6 +1,6 @@
 import base64
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import urlparse, urljoin
 
 import jwt
@@ -17,8 +17,8 @@ class CyberusKey:
     redirect_uri: str
     _API_URI: str = "https://api.cyberuskey.com"
     _OPENID_PUBLIC: str = "-----BEGIN PUBLIC KEY-----\nMIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHElKnuERpCN/WcD6RtS9rKhJODM\nIdr2Y1yFrS255cOaG10CLwFPhSVK5z4HQv5/VN3GB2Ft+fbu9OZRTqdA4lHo0PB3\nKaj3yByDUdIoTHd4RmZMLSFVHKR0KAW193nI7s/pzeqDL0oFpHnRNZGUqhRbm2UK\nfHHDWKkTn/iGIV7XAgMBAAE=\n-----END PUBLIC KEY-----"
-    _access_token: str = None
-    _id_token: str = None
+    __access_token: str = field(init=False, default=None)
+    __id_token: str = field(init=False, default=None)
 
     def _is_uri(self, uri: str):
         try:
@@ -48,17 +48,17 @@ class CyberusKey:
 
     @property
     def access_token(self) -> str:
-        if self._access_token is None:
+        if self.__access_token is None:
             raise InvalidAuthenticateValueError
 
-        return self._access_token
+        return self.__access_token
 
     @property
     def id_token(self) -> str:
-        if self._id_token is None:
+        if self.__id_token is None:
             raise InvalidAuthenticateValueError
 
-        return self._id_token
+        return self.__id_token
 
     def _compute_claim_hash(self, value: str) -> str:
         hash_obj = hashlib.sha256()
@@ -122,7 +122,7 @@ class CyberusKey:
             return token_body['error']
 
         id_token = token_body['id_token']
-        self._id_token = id_token
+        self.__id_token = id_token
         id_data = jwt.decode(id_token, self._OPENID_PUBLIC, algorithms=['RS256'], audience=self.client_id)
 
         if id_data.get("nonce") and nonce:
@@ -141,7 +141,7 @@ class CyberusKey:
             if not self._validate_claim_hash(original_c_hash, code):
                 raise AuthenticateException("invalid_c_hash", "Authorization code hash is invalid")
 
-        self._access_token = access_token
+        self.__access_token = access_token
 
         return id_data
 
