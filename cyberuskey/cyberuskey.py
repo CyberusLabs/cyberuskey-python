@@ -1,13 +1,14 @@
 import base64
-import hashlib
 from dataclasses import dataclass, field
-from urllib.parse import urlparse, urljoin
+from typing import Dict, Tuple
+from urllib.parse import urljoin
 
 import jwt
 import requests
 
 from cyberuskey.exceptions import InvalidValueError, InvalidAuthenticateValueError, AuthenticateException, \
     MissingAuthorizationCode
+from cyberuskey.utils import is_uri, compute_claim_hash
 
 
 @dataclass
@@ -20,20 +21,13 @@ class CyberusKey:
     __access_token: str = field(init=False, default=None)
     __id_token: str = field(init=False, default=None)
 
-    def _is_uri(self, uri: str):
-        try:
-            result = urlparse(uri)
-            return all([result.scheme, result.netloc])
-        except ValueError:
-            return False
-
     @property
     def api_uri(self) -> str:
         return self._API_URI
 
     @api_uri.setter
     def api_uri(self, uri: str) -> None:
-        if not self._is_uri(uri):
+        if not is_uri(uri):
             raise InvalidValueError(uri)
 
         self._API_URI = uri
@@ -60,15 +54,8 @@ class CyberusKey:
 
         return self.__id_token
 
-    def _compute_claim_hash(self, value: str) -> str:
-        hash_obj = hashlib.sha256()
-        hash_obj.update(value.encode('utf-8'))
-        first128bits = hash_obj.digest()[0:16]
-
-        return base64.urlsafe_b64encode(first128bits).decode("utf-8")
-
     def _validate_claim_hash(self, original_hash: str, value: str) -> bool:
-        computed_hash = self._compute_claim_hash(value)
+        computed_hash = compute_claim_hash(value)
 
         if original_hash != computed_hash:
             return False
@@ -77,19 +64,22 @@ class CyberusKey:
 
     def authenticate(
         self,
-        query_arguments: dict = None,
+        query_arguments: Dict = None,
         state: str = None,
+        original_state: str = None,
         nonce: str = None,
         code: str = None,
         error: str = None,
         error_description: str = None,
-    ) -> dict:
+    ) -> Tuple[Dict, str]:
         #TODO some description
 
         if query_arguments is None:
             query_arguments = {}
 
         error = query_arguments.get("error") or error
+        error_description = query_arguments.get("error_description") or error_description
+
         if error:
             raise AuthenticateException(error, error_description)
 
@@ -101,7 +91,7 @@ class CyberusKey:
             code = code[0].decode("utf-8")
 
         if state:
-            original_state = query_arguments.get('state')
+            original_state = query_arguments.get('state') or original_state
             if original_state != state:
                 raise AuthenticateException("invalid_state", "Invalid state value")
 
@@ -126,7 +116,7 @@ class CyberusKey:
         id_data = jwt.decode(id_token, self._OPENID_PUBLIC, algorithms=['RS256'], audience=self.client_id)
 
         if id_data.get("nonce") and nonce:
-            if id_data['nonce'] != nonce:
+            if id_data["nonce"] != nonce:
                 raise AuthenticateException("invalid_nonce", "Invalid nonce value")
 
         access_token = token_body['access_token']
@@ -143,5 +133,5 @@ class CyberusKey:
 
         self.__access_token = access_token
 
-        return id_data
+        return id_data, access_token
 
