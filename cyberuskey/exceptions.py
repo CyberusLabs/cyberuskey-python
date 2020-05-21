@@ -12,11 +12,6 @@ class InvalidAuthenticateValueError(ValueError):
         return "Value isn't initialized. You need to authenticate."
 
 
-class MissingAuthorizationCode(ValueError):
-    def __str__(self):
-        return "Missing authorization code value"
-
-
 class AuthenticateBaseException(Exception):
     def __init__(self, error: str, error_description: str):
         self.error = error
@@ -25,6 +20,12 @@ class AuthenticateBaseException(Exception):
 
     def __str__(self):
         return self.error_description
+
+
+class MissingAuthorizationCode(AuthenticateBaseException):
+    def __init__(self):
+        self.error = "auth_code_missing"
+        self.error_description = "Missing authorization code value"
 
 
 class AuthenticateException(AuthenticateBaseException):

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="cyberuskey-bkozub", # Replace with your own username
-    version="0.0.2",
+    version="0.0.1",
     author="CyberusLabs sp.z.o.o.",
     author_email="support@cyberuslabs.com",
     description="Cyberus Key authenticate library",
