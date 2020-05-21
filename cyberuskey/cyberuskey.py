@@ -70,7 +70,6 @@ class CyberusKey:
         self,
         query_arguments: Dict = None,
         state: str = None,
-        original_state: str = None,
         nonce: str = None,
         code: str = None,
         error: str = None,
@@ -91,7 +90,7 @@ class CyberusKey:
             int: 'iat': token generation timestamp,
             str: 'mobile': app instance identifier,
             str: 'at_hash': access token claim hash, base64 encoded from first 128 bytes,
-            str: 'c_hash': authorization code claim hash, the same as below,
+            str: 'c_hash': authorization code claim hash, the same as above,
             str: 'email': user email,
             str: 'name': full user name ex. 'John Cook',
             str: 'given_name': first user name, ex. 'John',
@@ -118,9 +117,8 @@ class CyberusKey:
         if isinstance(code, list):
             code = code[0].decode("utf-8")
 
-        if state:
-            original_state = query_arguments.get("state") or original_state
-            if original_state != state:
+        if query_arguments.get("state"):
+            if query_arguments['state'] != state:
                 raise AuthenticateException("invalid_state", "Invalid state value")
 
         data = {
@@ -146,7 +144,7 @@ class CyberusKey:
             id_token, self._OPENID_PUBLIC, algorithms=["RS256"], audience=self.client_id
         )
 
-        if id_data.get("nonce") and nonce:
+        if id_data.get("nonce"):
             if id_data["nonce"] != nonce:
                 raise AuthenticateException("invalid_nonce", "Invalid nonce value")
 
