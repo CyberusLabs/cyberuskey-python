@@ -77,8 +77,9 @@ class CyberusKey:
     ) -> Tuple[Dict, str]:
         """Cyberus Key authorization function. You can pass arguments in Dict format ($query_arguments)
          or separately like keywords args.
-        IF you pass $state argument it will be compared with query value or $original_state.
-        IF you pass $nonce value it will be compared from return data.
+        IF state value is present in $query_arguments, it will be compared to the $state value
+         you passed (e.g. coming from a secure cookie)
+        IF you pass $nonce value it will be compared from id token decoded data.
         All exceptions you can catch by AuthenticateBaseException.
         :raises AuthenticateException, MissingAuthorizationCode
         :return Tuple (Dict: {
@@ -118,7 +119,7 @@ class CyberusKey:
             code = code[0].decode("utf-8")
 
         if query_arguments.get("state"):
-            if query_arguments['state'] != state:
+            if query_arguments["state"] != state:
                 raise AuthenticateException("invalid_state", "Invalid state value")
 
         data = {
