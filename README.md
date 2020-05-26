@@ -8,8 +8,8 @@
 pip install cyberuskey
 ```
 
-or you can clone repository and use CyberusKey class directly in your project
-#Usage Example
+or you can clone repository and use CyberusKey class directly in your project 
+# Usage Example
 
 ```python
 from cyberuskey.cyberuskey import CyberusKey
